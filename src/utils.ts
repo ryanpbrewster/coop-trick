@@ -1,4 +1,4 @@
-import { Label, TeamMap, UserId, Word } from "./models";
+import { Label, TeamMap, UserId, Word, Card, DealtCard, User, Player, Mission, Cards, Suits } from "./models";
 
 export function mkNonce(): string {
   return Math.random()
@@ -19,6 +19,49 @@ export function splitIntoTeams(users: UserId[]): TeamMap {
   return Object.fromEntries(
     users.map((userId, idx) => [userId, idx % 2 === 0 ? "red" : "blue"])
   );
+}
+
+export function mkDeck(): Card[] {
+  const cards: Card[] = [];
+  for (const suit of Suits.ALL) {
+    const count = suit === "trump" ? 4 : 9;
+    for (let rank = 1; rank < count; rank++) {
+      cards.push({ rank, suit });
+    }
+  }
+  shuffle(cards);
+  return cards;
+}
+
+export function dealCards(users: User[]): Player[] {
+  if (users.length < 4) throw Error("need 4 players");
+  const deck: Card[] = mkDeck();
+  const cards: Card[][] = [[], [], [], []];
+  for (let i = 0; i < deck.length; i++) {
+    cards[i % 4].push(deck[i]);
+  }
+  const players = users.slice(0, 4).map((user, idx) => mkPlayer(user, cards[idx]));
+
+  // Move the leader (i.e., the player with the Trump 4) to the front.
+  const leader = players.findIndex((player) => player.dealt.find((d) => Cards.isTrump4(d.card)));
+  return [...players.slice(leader), ...players.slice(0, leader)];
+}
+
+function mkPlayer(user: User, cards: Card[]): Player {
+  const dealt: DealtCard[] = cards.map((card) => ({ card, played: false }));
+  return { user, dealt, missions: [] };
+}
+
+export function dealMissions(count: number): Mission[] {
+  const cards = mkDeck();
+  const missions: Mission[] = [];
+  for (let i=0; i < count; i++) {
+    missions.push({
+      type: 'card',
+      card: cards[i],
+    });
+  }
+  return missions;
 }
 
 function randomLabels(): Label[] {

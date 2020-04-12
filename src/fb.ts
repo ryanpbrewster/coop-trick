@@ -7,7 +7,7 @@ import {
   PlayingGameState,
   Word
 } from "./models";
-import { splitIntoTeams, mkWords, mkNonce } from "./utils";
+import { mkNonce, dealCards, dealMissions } from "./utils";
 
 const CONFIG = {
   apiKey: "AIzaSyCtk7lEaSVeYtpz2DjrFqYByCz_fEqm1nA",
@@ -42,7 +42,7 @@ export class FirebaseService {
           id: gameId,
           state: "waiting",
           nonce: mkNonce(),
-          players: { [me.id]: me }
+          players: [me, {id: "a", name: "a", icon: "A"}, {id: "b", name: "b", icon: "B"}, {id: "c", name: "c", icon: "C"}],
         };
         return txn.set(ref, waiting);
       }
@@ -51,7 +51,12 @@ export class FirebaseService {
         console.log("game in progress, bailing");
         return;
       }
-      data.players[me.id] = me;
+      const game = data as WaitingGameState;
+      if (game.players.find((p) => p.id === me.id)) {
+        console.log("already joined, bailing")
+        return;
+      }
+      game.players.push(me);
       console.log("joining lobby");
       return txn.set(ref, data);
     });
@@ -59,16 +64,14 @@ export class FirebaseService {
   }
 
   startGame(game: WaitingGameState): void {
-    const words = mkWords();
-    const players = game.players;
-    const teams = splitIntoTeams(Object.keys(players));
+    const players = dealCards(game.players);
+    const missions = dealMissions(3);
     const started: PlayingGameState = {
       id: game.id,
       state: "playing",
       nonce: mkNonce(),
       players,
-      teams,
-      words
+      missions,
     };
     const ref = this.app.firestore().collection('game').doc(game.id);
     this.app.firestore().runTransaction(async (txn) => {

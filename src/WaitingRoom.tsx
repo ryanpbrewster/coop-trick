@@ -14,7 +14,7 @@ function WaitingRoom({ me, game }: WaitingRoomProps) {
   const playerContent = Object.entries(game.players).map(([id, player]) => {
     return <PlayerCard key={id}>{player.name}</PlayerCard>;
   });
-  const disabled = Object.keys(game.players).length < 2;
+  const disabled = Object.keys(game.players).length < 4;
   return (
     <WaitingPlayers>
       <BigButton onClick={() => app.startGame(game)} disabled={disabled}>

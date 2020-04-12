@@ -1,78 +1,48 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { BigButton, TeamRoster, revealedColor } from "./Common";
-import { Label, PlayingGameState, UserId, Word } from "./models";
+import * as models from "./models";
 import { useFirebase } from "./fb";
 
 interface PlayingRoomProps {
-  readonly me: UserId;
-  readonly game: PlayingGameState;
+  readonly me: models.UserId;
+  readonly game: models.PlayingGameState;
 }
 function PlayingRoom({ me, game }: PlayingRoomProps) {
-  const [revealAll, setRevealAll] = useState<boolean>(false);
-  const cards = game.words.map((word, idx) => {
-    return (
-      <WordCard
-        key={idx}
-        me={me}
-        game={game}
-        word={word}
-        forceReveal={revealAll}
-      />
-    );
+  const players = game.players.map((player) => {
+    return <Player player={player} />;
   });
-  return (
-    <GameBoard>
-      <TeamRoster players={game.players} teams={game.teams} />
-      <BigButton
-        onMouseDown={() => setRevealAll(true)}
-        onMouseUp={() => setRevealAll(false)}
-        onMouseLeave={() => setRevealAll(false)}
-      >
-        Reveal
-      </BigButton>
-      <WordBoardWrapper>
-        <WordBoard>{cards}</WordBoard>
-      </WordBoardWrapper>
-    </GameBoard>
-  );
+  return <GameBoard>{players}</GameBoard>;
 }
 
-interface WordCardProps {
-  readonly me: UserId;
-  readonly game: PlayingGameState;
-  readonly word: Word;
-  readonly forceReveal: boolean;
+interface PlayerProps {
+  readonly player: models.Player;
 }
-function WordCard({ me, game, word, forceReveal }: WordCardProps) {
-  const app = useFirebase();
-  const [countdown, setCountdown] = useState<number | null>(null);
-  let label: Label | undefined;
-  if (word.revealed || forceReveal) {
-    label = word.label;
-  }
-  function startCountdown() {
-    if (me in game.players && !word.revealed && !countdown) {
-      setCountdown(setTimeout(() => app.revealWord(game, word.value), 1_000));
-    }
-  }
-  function stopCountdown() {
-    if (countdown) {
-      clearTimeout(countdown);
-    }
-    setCountdown(null);
-  }
+function Player({ player }: PlayerProps) {
+  const cards = player.dealt;
+  models.DealtCards.sort(cards);
+  const hand = player.dealt.map((dealt, idx) => {
+    return <DealtCard key={idx} dealt={dealt} />;
+  });
+  return <PlayerWrapper>
+    <p>{player.user.name}</p>
+    {hand}
+  </PlayerWrapper>;
+}
+
+const PlayerWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+`;
+
+interface DealtCardProps {
+  readonly dealt: models.DealtCard;
+}
+function DealtCard({ dealt }: DealtCardProps) {
   return (
-    <WordCardWrapper
-      label={label}
-      revealed={word.revealed}
-      held={!!countdown && !word.revealed}
-      onMouseDown={startCountdown}
-      onMouseUp={stopCountdown}
-      onMouseLeave={stopCountdown}
-    >
-      <p>{word.value}</p>
-    </WordCardWrapper>
+    <DealtCardWrapper suit={dealt.card.suit}>
+      <p>{dealt.card.rank}</p>
+    </DealtCardWrapper>
   );
 }
 
@@ -85,46 +55,20 @@ const GameBoard = styled.div`
   padding: 100px;
 `;
 
-const WordBoardWrapper = styled.div`
-  margin: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const WordBoard = styled.div`
-  display: grid;
-  grid-template: repeat(5, 1fr) / repeat(5, 1fr);
-`;
-
-interface WordCardWrapperProps {
-  readonly label?: Label;
-  readonly held: boolean;
-  readonly revealed: boolean;
+interface DealtCardWrapperProps {
+  readonly suit: models.Suit;
 }
-const WordCardWrapper = styled.div<WordCardWrapperProps>`
+const DealtCardWrapper = styled.div<DealtCardWrapperProps>`
+  width: 40px;
+  height: 60px;
+
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  flex: 1;
 
-  border-radius: 16px;
-
-  min-width: 48px;
-  margin: 4px;
-  padding: 8px;
-
-  font-size: 24px;
-  border: 8px solid;
-  background-color: ${({ held, revealed, label }) =>
-    held ? "gray" : label && revealedColor(label)};
-  border-color: ${({ held, revealed, label }) =>
-    revealed ? "white" : "black"};
-  opacity: ${({ revealed }) => (revealed ? "50%" : "100%")};
-
-  transition: 500ms;
-
-  cursor: pointer;
+  background-color: ${({suit}) => models.Suits.color(suit)}
 `;
+
 
 export default PlayingRoom;
