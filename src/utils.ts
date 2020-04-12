@@ -25,7 +25,7 @@ export function mkDeck(): Card[] {
   const cards: Card[] = [];
   for (const suit of Suits.ALL) {
     const count = suit === "trump" ? 4 : 9;
-    for (let rank = 1; rank < count; rank++) {
+    for (let rank = 1; rank <= count; rank++) {
       cards.push({ rank, suit });
     }
   }
