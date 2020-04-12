@@ -10,7 +10,10 @@ function PlayingRoom({ me, game }: PlayingRoomProps) {
   const players = game.players.map((player, idx) => {
     return <Player key={idx} idx={idx} player={player} />;
   });
-  return <GameBoard>{players}</GameBoard>;
+  return <GameBoard>
+    {players}
+    <Missions missions={game.missions} />
+  </GameBoard>;
 }
 
 interface PlayerProps {
@@ -94,6 +97,27 @@ const DealtCardWrapper = styled.div<DealtCardWrapperProps>`
   font-size: 24px;
   font-weight: bold;
   background-color: ${({suit}) => models.Suits.color(suit)}
+`;
+
+interface MissionsProps {
+  readonly missions: models.Mission[];
+}
+function Missions({ missions }: MissionsProps) {
+  const content = missions.map((mission, idx) => {
+    return <DealtCard key={idx} card={mission.card} />
+  });
+  return <MissionsWrapper>
+    {content}
+  </MissionsWrapper>;
+}
+const MissionsWrapper = styled.div`
+  grid-area: 2/2;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  opacity: 0.7;
 `;
 
 
