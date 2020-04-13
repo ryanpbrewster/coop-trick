@@ -5,7 +5,8 @@ import {
   User,
   WaitingGameState,
   PlayingGameState,
-  Word
+  Card,
+  Cards,
 } from "./models";
 import { mkNonce, dealCards, dealMissions } from "./utils";
 
@@ -71,7 +72,9 @@ export class FirebaseService {
       state: "playing",
       nonce: mkNonce(),
       players,
+      turn: 0,
       missions,
+      trick: [],
     };
     const ref = this.app.firestore().collection('game').doc(game.id);
     this.app.firestore().runTransaction(async (txn) => {
@@ -83,15 +86,38 @@ export class FirebaseService {
     });
   }
 
-  revealWord(game: PlayingGameState, word: string): void {
+  assignMission(game: PlayingGameState, missionIdx: number): void {
+    console.log(`assigning mission ${missionIdx} to player ${game.players[game.turn].user.name}`);
     const ref = this.app.firestore().collection('game').doc(game.id);
     this.app.firestore().runTransaction(async (txn) => {
-      const cur = await txn.get(ref);
-      const data = cur.data();
+      const data = (await txn.get(ref)).data();
       if (data && data.nonce === game.nonce) {
-        data.nonce = mkNonce();
-        data.words.find((w: Word) => w.value === word).revealed = true;
-        return txn.set(ref, data);
+        const cur = data as PlayingGameState;
+        if (missionIdx >= game.missions.length) throw Error(`no mission #${missionIdx}`);
+
+        cur.nonce = mkNonce();
+        cur.players[game.turn].missions.push(game.missions[missionIdx])
+        cur.turn = game.missions.length === 1 ? 0 : (game.turn + 1) % game.players.length;
+        cur.missions = [...game.missions.slice(0, missionIdx), ...game.missions.slice(missionIdx+1)];
+        return txn.set(ref, cur);
+      }
+    });
+  }
+
+  playCard(game: PlayingGameState, card: Card): void {
+    console.log(`player ${game.players[game.turn].user.name} is playing card ${JSON.stringify(card)}`);
+    const ref = this.app.firestore().collection('game').doc(game.id);
+    this.app.firestore().runTransaction(async (txn) => {
+      const data = (await txn.get(ref)).data();
+      if (data && data.nonce === game.nonce) {
+        const cur = data as PlayingGameState;
+        const cardIdx = cur.players[cur.turn].dealt.findIndex((c) => Cards.equal(c.card, card));
+
+        cur.nonce = mkNonce();
+        cur.players[game.turn].dealt[cardIdx] = {card, played: true};
+        cur.turn = (game.turn + 1) % game.players.length;
+        cur.trick.push(card);
+        return txn.set(ref, cur);
       }
     });
   }

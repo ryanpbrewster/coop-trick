@@ -1,6 +1,6 @@
-import { Label, TeamMap, UserId, Word, Card, DealtCard, User, Player, Mission, Cards, Suits } from "./models";
+import { Card, DealtCard, User, Player, Mission, Cards, Suits, Nonce } from "./models";
 
-export function mkNonce(): string {
+export function mkNonce(): Nonce {
   return Math.random()
     .toString(36)
     .substring(2);
@@ -13,12 +13,6 @@ function shuffle<T>(xs: T[]): void {
     xs[i] = xs[j];
     xs[j] = tmp;
   }
-}
-
-export function splitIntoTeams(users: UserId[]): TeamMap {
-  return Object.fromEntries(
-    users.map((userId, idx) => [userId, idx % 2 === 0 ? "red" : "blue"])
-  );
 }
 
 export function mkDeck(): Card[] {
@@ -53,7 +47,7 @@ function mkPlayer(user: User, cards: Card[]): Player {
 }
 
 export function dealMissions(count: number): Mission[] {
-  const cards = mkDeck();
+  const cards = mkDeck().filter((card) => card.suit !== 'trump');
   const missions: Mission[] = [];
   for (let i=0; i < count; i++) {
     missions.push({
@@ -62,34 +56,4 @@ export function dealMissions(count: number): Mission[] {
     });
   }
   return missions;
-}
-
-function randomLabels(): Label[] {
-  const labels: Label[] = [];
-  for (let i = 0; i < 9; i++) {
-    labels.push("red");
-  }
-  for (let i = 0; i < 8; i++) {
-    labels.push("blue");
-  }
-  for (let i = 0; i < 7; i++) {
-    labels.push("gray");
-  }
-  for (let i = 0; i < 1; i++) {
-    labels.push("black");
-  }
-  shuffle(labels);
-  return labels;
-}
-
-export function mkWords(): Word[] {
-  const chosen = new Set<string>();
-  while (chosen.size < 25) {
-    const idx = Math.floor(Math.random() * 500);
-    chosen.add(idx.toString());
-  }
-  const labels = randomLabels();
-  return Array.from(chosen).map((value, idx) => {
-    return { value, revealed: false, label: labels[idx] };
-  });
 }

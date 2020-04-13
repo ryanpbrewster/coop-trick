@@ -1,5 +1,7 @@
 export type GameState = WaitingGameState | PlayingGameState | OverGameState;
 
+export type Nonce = string;
+
 export type GameId = string;
 export interface WaitingGameState {
   readonly id: GameId;
@@ -16,9 +18,11 @@ export interface OverGameState {
 export interface PlayingGameState {
   readonly id: GameId;
   readonly state: "playing";
-  readonly nonce: string;
-  readonly players: Player[];
-  readonly missions: Mission[];
+  nonce: string;
+  players: Player[];
+  turn: number; // the index of the player whose turn it is
+  missions: Mission[];
+  trick: Card[];
 }
 
 export interface Player {
@@ -27,24 +31,12 @@ export interface Player {
   readonly missions: Mission[];
 }
 
-export interface Word {
-  readonly value: string;
-  readonly revealed: boolean;
-  readonly label: Label;
-}
-export type Label = Team | "gray" | "black";
-
 export type UserId = string;
 export interface User {
   readonly id: UserId;
   readonly name: string;
   readonly icon: string;
 }
-export type UserMap = { [id: string]: User };
-
-export type Team = "red" | "blue";
-export type TeamMap = { [id: string]: Team };
-
 export type Suit = "red" | "green" | "blue" | "yellow" | "trump";
 
 export class Suits {
@@ -69,6 +61,9 @@ export interface Card {
 export class Cards {
   static isTrump4(card: Card): boolean {
     return card.suit === 'trump' && card.rank === 4;
+  }
+  static equal(a: Card, b: Card): boolean {
+    return a.rank === b.rank && a.suit === b.suit;
   }
 }
 
