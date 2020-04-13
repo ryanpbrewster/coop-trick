@@ -1,4 +1,13 @@
-import { Card, DealtCard, User, Player, Mission, Cards, Suits, Nonce } from "./models";
+import {
+  Card,
+  DealtCard,
+  User,
+  Player,
+  Mission,
+  Cards,
+  Suits,
+  Nonce
+} from "./models";
 
 export function mkNonce(): Nonce {
   return Math.random()
@@ -34,25 +43,29 @@ export function dealCards(users: User[]): Player[] {
   for (let i = 0; i < deck.length; i++) {
     cards[i % 4].push(deck[i]);
   }
-  const players = users.slice(0, 4).map((user, idx) => mkPlayer(user, cards[idx]));
+  const players = users
+    .slice(0, 4)
+    .map((user, idx) => mkPlayer(user, cards[idx]));
 
   // Move the leader (i.e., the player with the Trump 4) to the front.
-  const leader = players.findIndex((player) => player.dealt.find((d) => Cards.isTrump4(d.card)));
+  const leader = players.findIndex(player =>
+    player.dealt.find(d => Cards.isTrump4(d.card))
+  );
   return [...players.slice(leader), ...players.slice(0, leader)];
 }
 
 function mkPlayer(user: User, cards: Card[]): Player {
-  const dealt: DealtCard[] = cards.map((card) => ({ card, played: false }));
+  const dealt: DealtCard[] = cards.map(card => ({ card, played: false }));
   return { user, dealt, missions: [] };
 }
 
 export function dealMissions(count: number): Mission[] {
-  const cards = mkDeck().filter((card) => card.suit !== 'trump');
+  const cards = mkDeck().filter(card => card.suit !== "trump");
   const missions: Mission[] = [];
-  for (let i=0; i < count; i++) {
+  for (let i = 0; i < count; i++) {
     missions.push({
-      type: 'card',
-      card: cards[i],
+      type: "card",
+      card: cards[i]
     });
   }
   return missions;

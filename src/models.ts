@@ -44,11 +44,16 @@ export class Suits {
 
   static color(suit: Suit): string {
     switch (suit) {
-      case 'blue': return "blue";
-      case 'green': return "green";
-      case 'red': return "red";
-      case 'yellow': return "yellow";
-      case 'trump': return "white";
+      case "blue":
+        return "blue";
+      case "green":
+        return "green";
+      case "red":
+        return "red";
+      case "yellow":
+        return "yellow";
+      case "trump":
+        return "white";
     }
   }
 }
@@ -60,7 +65,7 @@ export interface Card {
 
 export class Cards {
   static isTrump4(card: Card): boolean {
-    return card.suit === 'trump' && card.rank === 4;
+    return card.suit === "trump" && card.rank === 4;
   }
   static equal(a: Card, b: Card): boolean {
     return a.rank === b.rank && a.suit === b.suit;
@@ -85,6 +90,6 @@ export class DealtCards {
 
 export type Mission = CardMission;
 export interface CardMission {
-  readonly type: 'card';
+  readonly type: "card";
   readonly card: Card;
 }

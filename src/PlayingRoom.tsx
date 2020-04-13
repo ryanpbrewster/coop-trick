@@ -8,16 +8,26 @@ interface PlayingRoomProps {
   readonly game: models.PlayingGameState;
 }
 function PlayingRoom({ me, game }: PlayingRoomProps) {
-  const myIdx = game.players.findIndex((p) => p.user.id === me);
-  const players = [...game.players.slice(myIdx), ...game.players.slice(0, myIdx)];
+  const myIdx = game.players.findIndex(p => p.user.id === me);
+  const players = [
+    ...game.players.slice(myIdx),
+    ...game.players.slice(0, myIdx)
+  ];
   const playerContent = players.map((player, idx) => {
     return <Player key={idx} idx={idx} player={player} me={me} game={game} />;
   });
-  const content = game.missions.length > 0 ? <Missions me={me} game={game} /> : <Trick game={game} />;
-  return <GameBoard>
-    {playerContent}
-    {content}
-  </GameBoard>;
+  const content =
+    game.missions.length > 0 ? (
+      <Missions me={me} game={game} />
+    ) : (
+      <Trick game={game} />
+    );
+  return (
+    <GameBoard>
+      {playerContent}
+      {content}
+    </GameBoard>
+  );
 }
 
 interface PlayerProps {
@@ -30,20 +40,32 @@ function Player({ idx, player, me, game }: PlayerProps) {
   let gridArea;
   let transform;
   switch (idx) {
-    case 0: gridArea = "3/2"; break;
-    case 1: gridArea = "2/1"; transform="rotate(-90deg)"; break;
-    case 2: gridArea = "1/2"; break;
-    case 3: gridArea = "2/3"; transform="rotate(+90deg)"; break;
+    case 0:
+      gridArea = "3/2";
+      break;
+    case 1:
+      gridArea = "2/1";
+      transform = "rotate(-90deg)";
+      break;
+    case 2:
+      gridArea = "1/2";
+      break;
+    case 3:
+      gridArea = "2/3";
+      transform = "rotate(+90deg)";
+      break;
   }
   const active = game.players[game.turn].user.id === player.user.id;
-  return <PlayerWrapper style={{gridArea, transform}}>
-    <PlayerName active={active}>{player.user.name}</PlayerName>
-    <Hand game={game} dealt={player.dealt} revealed={player.user.id === me} />
-    <MissionsAndHints>
-      <DealtMissions missions={player.missions} />
-      <Hint hint={null} />
-    </MissionsAndHints>
-  </PlayerWrapper>;
+  return (
+    <PlayerWrapper style={{ gridArea, transform }}>
+      <PlayerName active={active}>{player.user.name}</PlayerName>
+      <Hand game={game} dealt={player.dealt} revealed={player.user.id === me} />
+      <MissionsAndHints>
+        <DealtMissions missions={player.missions} />
+        <Hint hint={null} />
+      </MissionsAndHints>
+    </PlayerWrapper>
+  );
 }
 
 const PlayerWrapper = styled.div`
@@ -60,7 +82,7 @@ const PlayerName = styled.p<PlayerNameProps>`
   display: flex;
   flex-direction: row;
   justify-content: center;
-  font-weight: ${({active}) => active ? "bold" : "normal"};
+  font-weight: ${({ active }) => (active ? "bold" : "normal")};
 `;
 
 interface HandProps {
@@ -72,11 +94,15 @@ function Hand({ dealt, revealed, game }: HandProps) {
   const app = useFirebase();
   models.DealtCards.sort(dealt);
   const cards = dealt.map((d, idx) => {
-    return <DealtCard key={idx} card={revealed ? d.card : null} onClick={() => app.playCard(game, d.card)}/>;
+    return (
+      <DealtCard
+        key={idx}
+        card={revealed ? d.card : null}
+        onClick={() => app.playCard(game, d.card)}
+      />
+    );
   });
-  return <HandWrapper>
-    {cards}
-  </HandWrapper>
+  return <HandWrapper>{cards}</HandWrapper>;
 }
 
 const HandWrapper = styled.div`
@@ -124,8 +150,8 @@ const DealtCardWrapper = styled.div<DealtCardWrapperProps>`
 
   font-size: 24px;
   font-weight: bold;
-  background-color: ${({suit}) => suit && models.Suits.color(suit)};
-  cursor: ${({clickable}) => clickable ? "pointer" : "not-allowed"};
+  background-color: ${({ suit }) => suit && models.Suits.color(suit)};
+  cursor: ${({ clickable }) => (clickable ? "pointer" : "not-allowed")};
 `;
 
 interface MissionsProps {
@@ -136,15 +162,13 @@ function Missions({ me, game }: MissionsProps) {
   const app = useFirebase();
   function clickFn(idx: number) {
     // if (game.players[game.turn].user.id === me) {
-      return () => app.assignMission(game, idx);
+    return () => app.assignMission(game, idx);
     // }
   }
   const content = game.missions.map((mission, idx) => {
-    return <DealtCard key={idx} card={mission.card} onClick={clickFn(idx)} />
+    return <DealtCard key={idx} card={mission.card} onClick={clickFn(idx)} />;
   });
-  return <MissionsWrapper>
-    {content}
-  </MissionsWrapper>;
+  return <MissionsWrapper>{content}</MissionsWrapper>;
 }
 const MissionsWrapper = styled.div`
   grid-area: 2/2;
@@ -161,11 +185,9 @@ interface DealtMissionsProps {
 }
 function DealtMissions({ missions }: DealtMissionsProps) {
   const content = missions.map((mission, idx) => {
-    return <DealtCard key={idx} card={mission.card} />
+    return <DealtCard key={idx} card={mission.card} />;
   });
-  return <DealtMissionsWrapper>
-    {content}
-  </DealtMissionsWrapper>;
+  return <DealtMissionsWrapper>{content}</DealtMissionsWrapper>;
 }
 const DealtMissionsWrapper = styled.div`
   display: flex;
@@ -183,7 +205,11 @@ interface HintProps {
   readonly hint: null;
 }
 function Hint({ hint }: HintProps) {
-  return <HintWrapper><DealtCard card={hint} /></HintWrapper>;
+  return (
+    <HintWrapper>
+      <DealtCard card={hint} />
+    </HintWrapper>
+  );
 }
 const HintWrapper = styled.div`
   margin-top: 4px;
@@ -203,11 +229,9 @@ interface TrickProps {
 }
 function Trick({ game }: TrickProps) {
   const content = game.trick.map((card, idx) => {
-    return <DealtCard key={idx} card={card} />
+    return <DealtCard key={idx} card={card} />;
   });
-  return <TrickWrapper>
-    {content}
-  </TrickWrapper>;
+  return <TrickWrapper>{content}</TrickWrapper>;
 }
 const TrickWrapper = styled.div`
   grid-area: 2/2;

@@ -6,7 +6,7 @@ import {
   WaitingGameState,
   PlayingGameState,
   Card,
-  Cards,
+  Cards
 } from "./models";
 import { mkNonce, dealCards, dealMissions } from "./utils";
 
@@ -14,7 +14,7 @@ const CONFIG = {
   apiKey: "AIzaSyCtk7lEaSVeYtpz2DjrFqYByCz_fEqm1nA",
   authDomain: "coop-trick.firebaseapp.com",
   projectId: "coop-trick",
-  storageBucket: "coop-trick.appspot.com",
+  storageBucket: "coop-trick.appspot.com"
 };
 
 type Unsubscribe = () => void;
@@ -32,9 +32,12 @@ export class FirebaseService {
         cb(data as GameState);
       }
     }
-    const ref = this.app.firestore().collection('game').doc(gameId);
+    const ref = this.app
+      .firestore()
+      .collection("game")
+      .doc(gameId);
     const listener = ref.onSnapshot(wrapper);
-    this.app.firestore().runTransaction(async (txn) => {
+    this.app.firestore().runTransaction(async txn => {
       console.log(`joining room ${gameId}`);
       const cur = await txn.get(ref);
       if (!cur.exists) {
@@ -43,7 +46,12 @@ export class FirebaseService {
           id: gameId,
           state: "waiting",
           nonce: mkNonce(),
-          players: [me, {id: "a", name: "a", icon: "A"}, {id: "b", name: "b", icon: "B"}, {id: "c", name: "c", icon: "C"}],
+          players: [
+            me,
+            { id: "a", name: "a", icon: "A" },
+            { id: "b", name: "b", icon: "B" },
+            { id: "c", name: "c", icon: "C" }
+          ]
         };
         return txn.set(ref, waiting);
       }
@@ -53,8 +61,8 @@ export class FirebaseService {
         return;
       }
       const game = data as WaitingGameState;
-      if (game.players.find((p) => p.id === me.id)) {
-        console.log("already joined, bailing")
+      if (game.players.find(p => p.id === me.id)) {
+        console.log("already joined, bailing");
         return;
       }
       game.players.push(me);
@@ -74,10 +82,13 @@ export class FirebaseService {
       players,
       turn: 0,
       missions,
-      trick: [],
+      trick: []
     };
-    const ref = this.app.firestore().collection('game').doc(game.id);
-    this.app.firestore().runTransaction(async (txn) => {
+    const ref = this.app
+      .firestore()
+      .collection("game")
+      .doc(game.id);
+    this.app.firestore().runTransaction(async txn => {
       const cur = await txn.get(ref);
       const data = cur.data();
       if (data && data.nonce === game.nonce) {
@@ -87,34 +98,57 @@ export class FirebaseService {
   }
 
   assignMission(game: PlayingGameState, missionIdx: number): void {
-    console.log(`assigning mission ${missionIdx} to player ${game.players[game.turn].user.name}`);
-    const ref = this.app.firestore().collection('game').doc(game.id);
-    this.app.firestore().runTransaction(async (txn) => {
+    console.log(
+      `assigning mission ${missionIdx} to player ${
+        game.players[game.turn].user.name
+      }`
+    );
+    const ref = this.app
+      .firestore()
+      .collection("game")
+      .doc(game.id);
+    this.app.firestore().runTransaction(async txn => {
       const data = (await txn.get(ref)).data();
       if (data && data.nonce === game.nonce) {
         const cur = data as PlayingGameState;
-        if (missionIdx >= game.missions.length) throw Error(`no mission #${missionIdx}`);
+        if (missionIdx >= game.missions.length)
+          throw Error(`no mission #${missionIdx}`);
 
         cur.nonce = mkNonce();
-        cur.players[game.turn].missions.push(game.missions[missionIdx])
-        cur.turn = game.missions.length === 1 ? 0 : (game.turn + 1) % game.players.length;
-        cur.missions = [...game.missions.slice(0, missionIdx), ...game.missions.slice(missionIdx+1)];
+        cur.players[game.turn].missions.push(game.missions[missionIdx]);
+        cur.turn =
+          game.missions.length === 1
+            ? 0
+            : (game.turn + 1) % game.players.length;
+        cur.missions = [
+          ...game.missions.slice(0, missionIdx),
+          ...game.missions.slice(missionIdx + 1)
+        ];
         return txn.set(ref, cur);
       }
     });
   }
 
   playCard(game: PlayingGameState, card: Card): void {
-    console.log(`player ${game.players[game.turn].user.name} is playing card ${JSON.stringify(card)}`);
-    const ref = this.app.firestore().collection('game').doc(game.id);
-    this.app.firestore().runTransaction(async (txn) => {
+    console.log(
+      `player ${
+        game.players[game.turn].user.name
+      } is playing card ${JSON.stringify(card)}`
+    );
+    const ref = this.app
+      .firestore()
+      .collection("game")
+      .doc(game.id);
+    this.app.firestore().runTransaction(async txn => {
       const data = (await txn.get(ref)).data();
       if (data && data.nonce === game.nonce) {
         const cur = data as PlayingGameState;
-        const cardIdx = cur.players[cur.turn].dealt.findIndex((c) => Cards.equal(c.card, card));
+        const cardIdx = cur.players[cur.turn].dealt.findIndex(c =>
+          Cards.equal(c.card, card)
+        );
 
         cur.nonce = mkNonce();
-        cur.players[game.turn].dealt[cardIdx] = {card, played: true};
+        cur.players[game.turn].dealt[cardIdx] = { card, played: true };
         cur.turn = (game.turn + 1) % game.players.length;
         cur.trick.push(card);
         return txn.set(ref, cur);
